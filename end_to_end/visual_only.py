@@ -6,7 +6,7 @@ from functions.train import train_model, evaluate_model
 from functions.extractor import extract_visual_features
 from torch.utils.data import DataLoader
 
-def main():
+def run():
     print_system_info()
 
     # Copy file cloud ke lokal
@@ -115,6 +115,3 @@ def main():
     val_dataset.close()
 
     print('=== Process Completed ===')
-    
-if __name__ == "__main__":
-    main()

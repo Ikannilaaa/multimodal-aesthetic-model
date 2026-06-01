@@ -6,16 +6,23 @@ from functions.train import train_model, evaluate_model
 from functions.extractor import extract_visual_features, extract_semantic_features
 from torch.utils.data import DataLoader
 
-def main():
+def run(prompt_type):
     print_system_info()
+
+    if prompt_type == 'contrastive':
+        CAPTION_FILES = CAPTION_FILES_CONTRASTIVE
+    elif prompt_type == 'structured':
+        CAPTION_FILES = CAPTION_FILES_STRUCTURED
+    else:
+        raise ValueError(f'Invalid prompt type: {prompt_type}')
 
     # Copy file cloud ke local
     if COPY_DATA_TO_LOCAL:
         local_img_dirs = copy_images_to_local(IMG_DIRS, LOCAL_IMG_ROOT)
-        local_caption_dirs = copy_captions_to_local(CAPTION_FILES_CONTRASTIVE, LOCAL_CAPTION_ROOT)
+        local_caption_dirs = copy_captions_to_local(CAPTION_FILES, LOCAL_CAPTION_ROOT)
     else:
         local_img_dirs = IMG_DIRS
-        local_caption_dirs = CAPTION_FILES_CONTRASTIVE
+        local_caption_dirs = CAPTION_FILES
 
     # Path .h5 files
     LOCAL_VIS_H5 = {s: LOCAL_FEAT_ROOT / f'visual_{s}.h5' for s in SPLITS}
@@ -115,8 +122,8 @@ def main():
         text_dim=TEXT_DIM
     ).to(DEVICE)
 
-    local_ckpt = LOCAL_CKPT_ROOT / 'best_aesthetic_model_merged.pth'
-    drive_ckpt = CKPT_DIR / 'best_aesthetic_model_merged.pth'
+    local_ckpt = LOCAL_CKPT_ROOT / f'best_aesthetic_model_{prompt_type}.pth'
+    drive_ckpt = CKPT_DIR / f'best_aesthetic_model_{prompt_type}.pth'
 
     train_model(
         model,
@@ -142,7 +149,3 @@ def main():
     val_dataset.close()
 
     print('=== Process Completed ===')
-
-
-if __name__ == "__main__":
-    main()

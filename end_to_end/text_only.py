@@ -8,18 +8,32 @@ from functions.train import train_model, evaluate_model
 from functions.extractor import extract_semantic_features
 from torch.utils.data import DataLoader
 
-def main():
+def run(prompt_type):
     print_system_info()
-    log = logging.getLogger()
+
+    if prompt_type == 'contrastive':
+        CAPTION_FILES = CAPTION_FILES_CONTRASTIVE
+    elif prompt_type == 'structured':
+        CAPTION_FILES = CAPTION_FILES_STRUCTURED
+    else:
+        raise ValueError(f'Invalid prompt type: {prompt_type}')
+
+    # Build Path
+    paths = build_paths(scenario='text_only', prompt_type=prompt_type)
+    CAPTION_FILES = {
+        'train': paths.local_captions / 'train',
+        'test': paths.local_captions / 'test',
+        'val': paths.local_captions / 'val'
+    }
 
     # Copy file cloud ke lokal
     if COPY_DATA_TO_LOCAL:
-        local_caption_dirs = copy_captions_to_local(CAPTION_FILES_STRUCTURED, LOCAL_CAPTION_ROOT)
+        local_caption_dirs = copy_captions_to_local(CAPTION_FILES, paths.local_captions)
     else:
-        local_caption_dirs = CAPTION_FILES_STRUCTURED
+        local_caption_dirs = CAPTION_FILES
 
     # Path .h5 files
-    LOCAL_TXT_H5 = {s: LOCAL_FEAT_ROOT / f'text_{s}.h5' for s in SPLITS}
+    LOCAL_TXT_H5 = {s: paths.local_features / f'text_{s}.h5' for s in SPLITS}
     DRIVE_TXT_H5 = {s: FEAT_T / f'text_{s}.h5' for s in SPLITS}
 
     for split in SPLITS:
@@ -48,7 +62,7 @@ def main():
     free_mem()
 
     print('=== Step 2: Preparing Dataset ===')
-    local_csv = LOCAL_DIR / CSV_PATH.name
+    local_csv = paths.local_root / CSV_PATH.name
     if COPY_DATA_TO_LOCAL and not local_csv.exists():
         shutil.copy2(CSV_PATH, local_csv)
     elif not COPY_DATA_TO_LOCAL:
@@ -92,8 +106,8 @@ def main():
         text_dim=TEXT_DIM
     ).to(DEVICE)
 
-    local_ckpt = LOCAL_CKPT_ROOT / 'best_aesthetic_model_text_structured.pth'
-    drive_ckpt = CKPT_DIR / 'best_aesthetic_model_text_structured.pth'
+    local_ckpt = LOCAL_CKPT_ROOT / f'best_aesthetic_model_text_{prompt_type}.pth'
+    drive_ckpt = CKPT_DIR / f'best_aesthetic_model_text_{prompt_type}.pth'
 
     train_model(
         model,
@@ -119,6 +133,3 @@ def main():
     val_dataset.close()
 
     print('=== Process Completed ===')
-
-if __name__ == "__main__":
-    main()
