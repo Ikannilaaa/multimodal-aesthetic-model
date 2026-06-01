@@ -1,8 +1,7 @@
 import torch
-import torch nn as nn
+import torch.nn as nn
 import torch.nn.functional as F
 
-# Model fusion Lama
 class VisualOnlyNetwork(nn.Module):
     def __init__(self, visual_dim):
         super(VisualOnlyNetwork, self).__init__()
@@ -23,7 +22,6 @@ class VisualOnlyNetwork(nn.Module):
 
         return self.fusion(visual)
 
-# Model fusion Lama
 class TextOnlyNetwork(nn.Module):
     def __init__(self, text_dim):
         super(TextOnlyNetwork, self).__init__()
@@ -44,7 +42,6 @@ class TextOnlyNetwork(nn.Module):
 
         return self.fusion(text)
 
-# Model fusion lama
 class AestheticFusionNetwork(nn.Module):
     def __init__(self, visual_dim, text_dim):
         super(AestheticFusionNetwork, self).__init__()

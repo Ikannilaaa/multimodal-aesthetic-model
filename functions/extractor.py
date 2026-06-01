@@ -1,12 +1,13 @@
 from pathlib import Path
-from config import (
+from functions.config import (
     MODEL_ID,
     VISUAL_SYNC_EVERY,
     VALID_EXT,
-    DEVICE
+    DEVICE,
+    VISUAL_BATCH_SIZE,
 )
-from utils import (
-    choose_batch_size, load_clip_once,
+from functions.utils import (
+    load_clip_once,
     _get_processed_key_h5, _normalize_torch_features,
     _write_feature_h5, sync_to_drive, free_mem, _find_caption_field
 )
@@ -24,7 +25,7 @@ def extract_visual_features(
     image_folder,
     output_file,
     model_id=MODEL_ID,
-    batch_size=None,
+    batch_size=VISUAL_BATCH_SIZE,
     model=None,
     processor=None,
     sync_output_file=None,
@@ -38,10 +39,6 @@ def extract_visual_features(
     # Cek esktensi file output fitur (.h5)
     if not OUTPUT_FILE.name.endswith('.h5'):
         raise ValueError(f'Output file must be a HDF5 file: {OUTPUT_FILE}')
-
-    # Pilih batch size berdasarkan jenis CPU/GPU pada env
-    if batch_size is None:
-        batch_size = choose_batch_size()
 
     # Load model
     own_model = False

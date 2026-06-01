@@ -8,7 +8,7 @@ from tqdm import tqdm
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-from config import (
+from functions.config import (
     THRESHOLDS,
     DEVICE,
     TRAIN_BATCH_SIZE,
@@ -158,7 +158,7 @@ def train_model(
     train_loader,
     val_loader,
     device=DEVICE,
-    epochs=30,
+    epochs=EPOCHS,
     save_path='best_model.pth'
 ):
     # Load train dataset

@@ -16,7 +16,7 @@ from transformers import (
     CLIPTokenizer
 )
 
-from config import (
+from functions.config import (
     SEED, DEVICE, USE_FP16, MODEL_ID, VALID_EXT, VISUAL_SYNC_EVERY
 )
 
