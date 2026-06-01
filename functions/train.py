@@ -61,7 +61,7 @@ def infer_logits(model, loader, device, task_mode='multimodal'):
                 visual = visual.to(device, non_blocking=True)
             if text is not None:
                 text = text.to(device, non_blocking=True)
-            label = label.to(device, non_blocking=True)
+            label = label.to(device, non_blocking=True).view(-1, 1)
 
             logits = _forward_batch(model, visual, text, task_mode)
             all_logits.append(logits.detach().cpu().view(-1))
