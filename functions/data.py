@@ -8,8 +8,8 @@ from torch.utils.data import (
     WeightedRandomSampler
 )
 
-from config import VALID_EXT
-from utils import _get_processed_key_h5, _build_candidates
+from functions.config import VALID_EXT
+from functions.utils import _get_processed_key_h5, _build_candidates
 
 # Dataset Loader
 class HybridFusionDataset(Dataset):
