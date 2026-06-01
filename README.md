@@ -15,3 +15,5 @@ The existing scenarios including 'multimodal', 'visual_only' and 'text_only'. Fo
 | Text Only  | Structured  |
 | Multimodal  | Contrastive  |
 | Multimodal  | Structured  |
+
+For this experiment, A100 GPU in Google Colab is used. The dataset used for this originally taken from Gourmet Photography Dataset (GPD).
