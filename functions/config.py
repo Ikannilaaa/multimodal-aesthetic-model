@@ -1,7 +1,7 @@
-import time
-import numpy as np
 from dataclasses import dataclass
 from pathlib import Path
+import time
+import numpy as np
 import torch
 
 PROMPT_TYPE = 'structured'
@@ -16,29 +16,6 @@ BASE_LOCAL = Path('/content/work_24k')
 DATA_DIR = BASE_CLOUD / 'data'
 CSV_PATH = DATA_DIR / 'sample_subset.csv'
 CAPTION_DIR = BASE_CLOUD / 'captions' / 'clean'
-
-FEATURE_DIR = BASE_CLOUD / 'features'
-FEAT_V = FEATURE_DIR / 'vision'
-FEAT_T = FEATURE_DIR / 'text'
-
-CKPT_DIR = BASE_CLOUD / 'ckpt'
-RUNS_DIR = BASE_CLOUD / 'runs'
-
-
-# Local Directory
-LOCAL_IMG_ROOT = BASE_LOCAL / 'images'
-LOCAL_CAPTION_ROOT = BASE_LOCAL / 'captions'
-LOCAL_FEAT_ROOT = BASE_LOCAL / 'features'
-LOCAL_CKPT_ROOT = BASE_LOCAL / 'ckpt'
-LOCAL_RUNS_ROOT = BASE_LOCAL / 'runs'
-
-for p in [
-    BASE_CLOUD, DATA_DIR, CKPT_DIR, 
-    CAPTION_DIR, FEAT_V, FEAT_T, 
-    RUNS_DIR, BASE_LOCAL, LOCAL_IMG_ROOT, 
-    LOCAL_FEAT_ROOT, LOCAL_CAPTION_ROOT,
-    LOCAL_CKPT_ROOT, LOCAL_RUNS_ROOT]:
-        p.mkdir(parents=True, exist_ok=True)
     
 # Model, Seed
 MODEL_ID = 'openai/clip-vit-large-patch14-336'
@@ -50,6 +27,7 @@ COPY_DATA_TO_LOCAL = True
 # Hyperparameter
 TRAIN_BATCH_SIZE = 64
 TEST_BATCH_SIZE = 256
+VISUAL_BATCH_SIZE = 64
 NUM_WORKERS = 0 
 EPOCHS = 30 
 PATIENCE = 6 
@@ -57,6 +35,7 @@ LR = 1e-4
 WEIGHT_DECAY = 1e-4
 PIN_MEMORY = True
 VISUAL_SYNC_EVERY = 5000
+
 VALID_EXT = {".jpg", ".jpeg", ".png", ".bmp", ".webp"}
 SPLITS = ["train", "val", "test"]
 THRESHOLDS = np.arange(0.30, 0.71, 0.02)
@@ -81,6 +60,8 @@ CAPTION_FILES_STRUCTURED = {
 
 @dataclass
 class ExperimentPaths:
+    scenario: str
+    prompt_type: str | None
     cloud_root:Path
     local_root:Path
     cloud_ckpt:Path
@@ -92,7 +73,11 @@ class ExperimentPaths:
     local_images:Path | None = None
     local_captions:Path | None = None
 
-def build_paths(scenario: str, prompt_type: str | None = None) -> ExperimentPaths:
+def build_paths(
+    scenario: str,
+    prompt_type: str | None = None,
+    run_id: str = RUN_ID
+) -> ExperimentPaths:
     """
     scenario:
         - visual_only
@@ -102,32 +87,39 @@ def build_paths(scenario: str, prompt_type: str | None = None) -> ExperimentPath
     prompt_type:
         - structured
         - contrastive
-        - None (untuk visual_only)
+        - None for visual_only
     """
+
+    scenario = scenario.lower().strip()
 
     if scenario not in {'visual_only', 'text_only', 'multimodal'}:
         raise ValueError(f"scenario: {scenario} is invalid")
     
     if scenario == 'visual_only':
-        exp_name = scenario
-        cloud_root = BASE_CLOUD / exp_name
-        local_root = BASE_LOCAL / exp_name
+        cloud_root = BASE_CLOUD / scenario
+        local_root = BASE_LOCAL / scenario
+        prompt_type = None
     else:
+        if prompt_type is None:  
+            raise ValueError("prompt_type is required for text_only and multimodal")
+        prompt_type = prompt_type.lower().strip()
         if prompt_type not in {'structured', 'contrastive'}:  
-            raise ValueError(f"prompt_type: {prompt_type} is invalid for scenario: {scenario}")
-        exp_name = BASE_CLOUD / scenario / prompt_type
-        cloud_root = exp_name
+            raise ValueError("prompt_type is invalid, must be 'structured' or 'contrastive'")
+
+        cloud_root = BASE_CLOUD / scenario / prompt_type
         local_root = BASE_LOCAL / scenario / prompt_type
 
     paths = ExperimentPaths(
+        scenario=scenario,
+        prompt_type=prompt_type,
         cloud_root=cloud_root,
         local_root=local_root,
         cloud_ckpt=cloud_root / 'ckpt',
         cloud_features=cloud_root / 'features',
-        cloud_runs=cloud_root / 'runs' / RUN_ID,
+        cloud_runs=cloud_root / 'runs' / run_id,
         local_ckpt=local_root / 'ckpt',
         local_features=local_root / 'features',
-        local_runs=local_root / 'runs' / RUN_ID
+        local_runs=local_root / 'runs' / run_id
     )
 
     if scenario in {'text_only', 'multimodal'}:
@@ -152,3 +144,8 @@ def build_paths(scenario: str, prompt_type: str | None = None) -> ExperimentPath
         paths.local_captions.mkdir(parents=True, exist_ok=True)
 
     return paths    
+
+CAPTION_MAP = {
+    'structured': CAPTION_FILES_STRUCTURED,
+    'contrastive': CAPTION_FILES_CONTRASTIVE,
+}

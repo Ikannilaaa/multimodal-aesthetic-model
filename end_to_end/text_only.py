@@ -1,5 +1,3 @@
-from functions.config import RUNS_DIR
-from functions.config import CKPT_DIR
 from functions.config import *
 from functions.utils import *
 from functions.data import CaptionDataset, make_weighted_sampler
@@ -11,20 +9,15 @@ from torch.utils.data import DataLoader
 def run(prompt_type):
     print_system_info()
 
+    # Build Path
+    paths = build_paths(scenario='text_only', prompt_type=prompt_type)
+
     if prompt_type == 'contrastive':
         CAPTION_FILES = CAPTION_FILES_CONTRASTIVE
     elif prompt_type == 'structured':
         CAPTION_FILES = CAPTION_FILES_STRUCTURED
     else:
         raise ValueError(f'Invalid prompt type: {prompt_type}')
-
-    # Build Path
-    paths = build_paths(scenario='text_only', prompt_type=prompt_type)
-    CAPTION_FILES = {
-        'train': paths.local_captions / 'train',
-        'test': paths.local_captions / 'test',
-        'val': paths.local_captions / 'val'
-    }
 
     # Copy file cloud ke lokal
     if COPY_DATA_TO_LOCAL:
@@ -34,7 +27,7 @@ def run(prompt_type):
 
     # Path .h5 files
     LOCAL_TXT_H5 = {s: paths.local_features / f'text_{s}.h5' for s in SPLITS}
-    DRIVE_TXT_H5 = {s: FEAT_T / f'text_{s}.h5' for s in SPLITS}
+    DRIVE_TXT_H5 = {s: paths.cloud_features / f'text_{s}.h5' for s in SPLITS}
 
     for split in SPLITS:
         if DRIVE_TXT_H5[split].exists() and not LOCAL_TXT_H5[split].exists():
@@ -106,8 +99,8 @@ def run(prompt_type):
         text_dim=TEXT_DIM
     ).to(DEVICE)
 
-    local_ckpt = LOCAL_CKPT_ROOT / f'best_aesthetic_model_text_{prompt_type}.pth'
-    drive_ckpt = CKPT_DIR / f'best_aesthetic_model_text_{prompt_type}.pth'
+    local_ckpt = paths.local_ckpt / f'best_aesthetic_model_text_{prompt_type}.pth'
+    drive_ckpt = paths.cloud_ckpt / f'best_aesthetic_model_text_{prompt_type}.pth'
 
     train_model(
         model,
@@ -125,7 +118,7 @@ def run(prompt_type):
         test_loader,
         device=DEVICE,
         ckpt_path=local_ckpt,
-        out_dir=RUNS_DIR
+        out_dir=paths.cloud_runs
     )
 
     train_dataset.close()

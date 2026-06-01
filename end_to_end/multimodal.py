@@ -16,19 +16,21 @@ def run(prompt_type):
     else:
         raise ValueError(f'Invalid prompt type: {prompt_type}')
 
+    paths = build_paths(scenario='multimodal', prompt_type=prompt_type)
+
     # Copy file cloud ke local
     if COPY_DATA_TO_LOCAL:
-        local_img_dirs = copy_images_to_local(IMG_DIRS, LOCAL_IMG_ROOT)
-        local_caption_dirs = copy_captions_to_local(CAPTION_FILES, LOCAL_CAPTION_ROOT)
+        local_img_dirs = copy_images_to_local(IMG_DIRS, paths.local_images)
+        local_caption_dirs = copy_captions_to_local(CAPTION_FILES, paths.local_captions)
     else:
         local_img_dirs = IMG_DIRS
         local_caption_dirs = CAPTION_FILES
 
     # Path .h5 files
-    LOCAL_VIS_H5 = {s: LOCAL_FEAT_ROOT / f'visual_{s}.h5' for s in SPLITS}
-    LOCAL_TXT_H5 = {s: LOCAL_FEAT_ROOT / f'text_{s}.h5' for s in SPLITS}
-    DRIVE_VIS_H5 = {s: FEAT_V / f'visual_{s}.h5' for s in SPLITS}
-    DRIVE_TXT_H5 = {s: FEAT_T / f'text_{s}.h5' for s in SPLITS}
+    LOCAL_VIS_H5 = {s: paths.local_features / f'visual_{s}.h5' for s in SPLITS}
+    LOCAL_TXT_H5 = {s: paths.local_features / f'text_{s}.h5' for s in SPLITS}
+    DRIVE_VIS_H5 = {s: paths.cloud_features / f'visual_{s}.h5' for s in SPLITS}
+    DRIVE_TXT_H5 = {s: paths.cloud_features / f'text_{s}.h5' for s in SPLITS}
 
     for split in SPLITS:
         if DRIVE_VIS_H5[split].exists() and not LOCAL_VIS_H5[split].exists():
@@ -43,7 +45,6 @@ def run(prompt_type):
     clip_model, clip_processor, clip_tokenizer = load_clip_once(MODEL_ID)
 
     print('=== Step 1: Visual Extraction ===')
-    visual_bs = choose_batch_size()
 
     for split in SPLITS:
         extract_visual_features(
@@ -53,8 +54,7 @@ def run(prompt_type):
             model_id=MODEL_ID,
             processor=clip_processor,
             sync_output_file=DRIVE_VIS_H5[split],
-            batch_size=visual_bs,
-            # device=DEVICE
+            batch_size=VISUAL_BATCH_SIZE,
         )
         free_mem()
 
@@ -76,7 +76,7 @@ def run(prompt_type):
     free_mem()
 
     print('=== Step 3: Preparing Dataset ===')
-    local_csv = LOCAL_DIR / CSV_PATH.name
+    local_csv = paths.local_root / CSV_PATH.name
     if COPY_DATA_TO_LOCAL and not local_csv.exists():
         shutil.copy2(CSV_PATH, local_csv)
     elif not COPY_DATA_TO_LOCAL:
@@ -107,7 +107,7 @@ def run(prompt_type):
 
     val_loader = DataLoader(
         val_dataset,
-        batch_size=TEST_BATCH_SIZE, # Belum di define
+        batch_size=TEST_BATCH_SIZE,
         shuffle=False,
         num_workers=NUM_WORKERS,
         pin_memory=PIN_MEMORY
@@ -122,8 +122,8 @@ def run(prompt_type):
         text_dim=TEXT_DIM
     ).to(DEVICE)
 
-    local_ckpt = LOCAL_CKPT_ROOT / f'best_aesthetic_model_{prompt_type}.pth'
-    drive_ckpt = CKPT_DIR / f'best_aesthetic_model_{prompt_type}.pth'
+    local_ckpt = paths.local_ckpt / f'best_aesthetic_model_{prompt_type}.pth'
+    drive_ckpt = paths.cloud_ckpt / f'best_aesthetic_model_{prompt_type}.pth'
 
     train_model(
         model,
@@ -141,7 +141,7 @@ def run(prompt_type):
         test_loader,
         device=DEVICE,
         ckpt_path=local_ckpt,
-        out_dir=RUNS_DIR
+        out_dir=paths.cloud_runs
     )
 
     train_dataset.close()

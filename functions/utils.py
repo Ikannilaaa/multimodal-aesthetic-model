@@ -51,22 +51,6 @@ def print_system_info():
 
     print(f'Model: {MODEL_ID}')
 
-# Menentukan batch size berdasarkan GPU
-def choose_batch_size():
-    if DEVICE != 'cuda':
-      return 8 # CPU
-
-    name = torch.cuda.get_device_name(0).lower()
-    if 'h100' in name:
-      return 128
-    if 'a100' in name:
-      return 64
-    if 'l4' in name:
-      return 32
-    if 't4' in name:
-      return 16
-    return 16
-
 # Check sisa ruang penyimpanan lokal
 def check_disk_space(path: Path, required_gb: float = 15.0):
     usage = shutil.disk_usage(path)

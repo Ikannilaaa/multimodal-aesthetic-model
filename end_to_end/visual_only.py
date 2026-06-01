@@ -9,15 +9,18 @@ from torch.utils.data import DataLoader
 def run():
     print_system_info()
 
+    # Build Path
+    paths = build_paths(scenario='visual_only')
+
     # Copy file cloud ke lokal
     if COPY_DATA_TO_LOCAL:
-        local_img_dirs = copy_images_to_local(IMG_DIRS, LOCAL_IMG_ROOT)
+        local_img_dirs = copy_images_to_local(IMG_DIRS, paths.local_images)
     else:
         local_img_dirs = IMG_DIRS
 
     # Path .h5 files
-    LOCAL_VIS_H5 = {s: LOCAL_FEAT_ROOT / f'visual_{s}.h5' for s in SPLITS}
-    DRIVE_VIS_H5 = {s: FEAT_V / f'visual_{s}.h5' for s in SPLITS}
+    LOCAL_VIS_H5 = {s: paths.local_features / f'visual_{s}.h5' for s in SPLITS}
+    DRIVE_VIS_H5 = {s: paths.cloud_features / f'visual_{s}.h5' for s in SPLITS}
 
     for split in SPLITS:
         if DRIVE_VIS_H5[split].exists() and not LOCAL_VIS_H5[split].exists():
@@ -28,8 +31,6 @@ def run():
     clip_model, clip_processor, clip_tokenizer = load_clip_once(MODEL_ID)
 
     print('=== Step 1: Visual Extraction ===')
-    visual_bs = choose_batch_size()
-
     for split in SPLITS:
         extract_visual_features(
             image_folder=local_img_dirs[split],
@@ -38,13 +39,12 @@ def run():
             model_id=MODEL_ID,
             processor=clip_processor,
             sync_output_file=DRIVE_VIS_H5[split],
-            # batch_size=visual_bs,
-            # device=DEVICE
+            batch_size=VISUAL_BATCH_SIZE,
         )
         free_mem()
 
     print('=== Step 2: Preparing Dataset ===')
-    local_csv = LOCAL_DIR / CSV_PATH.name
+    local_csv = paths.local_root / CSV_PATH.name
     if COPY_DATA_TO_LOCAL and not local_csv.exists():
         shutil.copy2(CSV_PATH, local_csv)
     elif not COPY_DATA_TO_LOCAL:
@@ -88,8 +88,8 @@ def run():
         visual_dim=VISUAL_DIM
     ).to(DEVICE)
 
-    local_ckpt = LOCAL_CKPT_ROOT / 'best_aesthetic_model_visual.pth'
-    drive_ckpt = CKPT_DIR / 'best_aesthetic_model_visual.pth'
+    local_ckpt = paths.local_ckpt / 'best_aesthetic_model_visual.pth'
+    drive_ckpt = paths.cloud_ckpt / 'best_aesthetic_model_visual.pth'
 
     train_model(
         model,
@@ -107,7 +107,7 @@ def run():
         test_loader,
         device=DEVICE,
         ckpt_path=local_ckpt,
-        out_dir=RUNS_DIR
+        out_dir=paths.cloud_runs
     )
 
     train_dataset.close()

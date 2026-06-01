@@ -20,7 +20,7 @@ def parse_args():
     parser.add_argument(
         "--prompt_type",
         type=str,
-        required=True,
+        required=False,
         choices=[
             'structured',
             'contrastive',
@@ -32,16 +32,15 @@ def parse_args():
 def main():
     args = parse_args()
 
+    if args.scneario in {'text_only', 'multimodal'} and args.prompt_type is None:
+        raise ValueError("prompt_type is required for text_only and multimodal")
+
     if args.scenario == 'visual_only':
         run_visual_only()
     elif args.scenario == 'text_only':
-        run_text_only(
-            prompt_type=args.prompt_type
-        )
+        run_text_only(prompt_type=args.prompt_type)
     elif args.scenario == 'multimodal':
-        run_multimodal(
-            prompt_type=args.prompt_type
-        )
+        run_multimodal(prompt_type=args.prompt_type)
 
 if __name__ == "__main__":
     main()
