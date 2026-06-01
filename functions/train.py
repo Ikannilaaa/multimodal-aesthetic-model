@@ -33,10 +33,10 @@ def _unpack_batch(batch, task_mode):
         return visual, text, label
     if task_mode == 'visual_only':
         visual, label = batch
-        return visual, label
+        return visual, None, label
     if task_mode == 'text_only':
         text, label = batch
-        return text, label
+        return None, text, label
     raise ValueError(f"Unsupported task mode: {task_mode}")
 
 def _forward_batch(model, visual, text, task_mode):
