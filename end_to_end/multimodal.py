@@ -45,7 +45,6 @@ def run(prompt_type):
     clip_model, clip_processor, clip_tokenizer = load_clip_once(MODEL_ID)
 
     print('=== Step 1: Visual Extraction ===')
-
     for split in SPLITS:
         extract_visual_features(
             image_folder=local_img_dirs[split],
@@ -131,7 +130,9 @@ def run(prompt_type):
         val_loader,
         device=DEVICE,
         epochs=EPOCHS,
-        save_path=local_ckpt
+        save_path=local_ckpt,
+        runs_dir=paths.local_runs,
+        task_mode='multimodal'
     )
     sync_to_drive(local_ckpt, drive_ckpt)
 
@@ -141,7 +142,8 @@ def run(prompt_type):
         test_loader,
         device=DEVICE,
         ckpt_path=local_ckpt,
-        out_dir=paths.cloud_runs
+        out_dir=paths.cloud_runs,
+        task_mode='multimodal'
     )
 
     train_dataset.close()

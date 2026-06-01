@@ -16,7 +16,6 @@ from functions.config import (
     WEIGHT_DECAY,
     PATIENCE,
     EPOCHS,
-    RUNS,
     MODEL_ID
 )
 
@@ -28,19 +27,50 @@ from sklearn.metrics import (
     confusion_matrix
 )
 
-def infer_logits(model, loader, device):
+def _unpack_batch(batch, task_mode):
+    if task_mode == 'multimodal':
+        visual, text, label = batch
+        return visual, text, label
+    if task_mode == 'visual_only':
+        visual, label = batch
+        return visual, label
+    if task_mode == 'text_only':
+        text, label = batch
+        return text, label
+    raise ValueError(f"Unsupported task mode: {task_mode}")
+
+def _forward_batch(model, visual, text, task_mode):
+    if task_mode == 'multimodal':
+        return model(visual, text)
+    if task_mode == 'visual_only':
+        return model(visual)
+    if task_mode == 'text_only':
+        return model(text)
+    raise ValueError(f"Unsupported task mode: {task_mode}")
+
+def infer_logits(model, loader, device, task_mode='multimodal'):
     model.eval() # Evaluation mode
     all_logits = []
     all_labels = []
 
     with torch.inference_mode():
-        for visual, text, label in loader:
-            visual, text, label = visual.to(device, non_blocking=True), text.to(device, non_blocking=True), label.to(device, non_blocking=True)
-            logits = model(visual, text) # Forward Pass
-            all_logits.append(logits.detach().cpu())
-            all_labels.append(label.detach().cpu())
+        for batch in loader:
+            visual, text, label = _unpack_batch(batch, task_mode)
 
-    logits = torch.cat(all_logits, dim=0).squeeze().numpy()
+            if visual is not None:
+                visual = visual.to(device, non_blocking=True)
+            if text is not None:
+                text = text.to(device, non_blocking=True)
+            label = label.to(device, non_blocking=True)
+
+            logits = _forward_batch(model, visual, text, task_mode)
+            all_logits.append(logits.detach().cpu().view(-1))
+            all_labels.append(label.detach().cpu().view(-1))
+
+    if not all_logits:
+        raise RuntimeError('No batches found in loader.')
+
+    logits = torch.cat(all_logits, dim=0).numpy()
     labels = torch.cat(all_labels, dim=0).numpy()
 
     return logits, labels
@@ -81,7 +111,8 @@ def evaluate_model(
     test_loader,
     device=DEVICE,
     ckpt_path=None,
-    out_dir=None
+    out_dir=None,
+    task_mode='multimodal'
 ):
     best_threshold = 0.5 # Bisa diganti pake tuned treshold
     if ckpt_path is not None and Path(ckpt_path).exists():
@@ -94,7 +125,7 @@ def evaluate_model(
         else: # Kalau hanya state_dict
             model.load_state_dict(ckpt)
 
-    logits, labels = infer_logits(model, test_loader, device)
+    logits, labels = infer_logits(model, test_loader, device, task_mode=task_mode)
     probs = 1.0 / (1.0 + np.exp(-logits)) # Sigmoid
     preds = (probs >= best_threshold).astype(np.int32) # Prediksi biner
 
@@ -103,7 +134,8 @@ def evaluate_model(
         labels,
         preds,
         target_names=['Low Aesthetic', 'High Aesthetic'],
-        digits=4
+        digits=4,
+        zero_division=0
     ))
 
     try:
@@ -159,8 +191,18 @@ def train_model(
     val_loader,
     device=DEVICE,
     epochs=EPOCHS,
-    save_path='best_model.pth'
+    save_path='best_model.pth',
+    runs_dir=None,
+    task_mode='multimodal'
 ):
+    save_path = Path(save_path)
+    save_path.parent.mkdir(parents=True, exist_ok=True)
+
+    if runs_dir is None:
+        runs_dir = save_path.parent
+    runs_dir = Path(runs_dir)
+    runs_dir.mkdir(parents=True, exist_ok=True)
+
     # Load train dataset
     train_dataset = train_loader.dataset
     # Ambil Pos weight untuk perhitungan class imbalance
@@ -188,21 +230,28 @@ def train_model(
         model.train() # Training mode
         train_loss = 0.0
 
-        for visual, text, label in tqdm(train_loader, desc=f'Epoch {epoch}/{epochs}'):
+        for batch in tqdm(train_loader, desc=f'Epoch {epoch}/{epochs}'):
             # Pindah ke device
-            visual, text, label = visual.to(device, non_blocking=True), text.to(device, non_blocking=True), label.to(device, non_blocking=True)
+            visual, text, label = _unpack_batch(batch, task_mode)
+
+            if visual is not None:
+                visual = visual.to(device, non_blocking=True)
+            if text is not None:
+                text = text.to(device, non_blocking=True)
+            label = label.to(device, non_blocking=True)
+
             optimizer.zero_grad(set_to_none=True) # Hapus gradient lama sebelum backward baru
 
             if device == 'cuda':
                 with torch.cuda.amp.autocast(dtype=torch.float16):
-                    out = model(visual, text).squeeze(-1)
+                    out = _forward_batch(model, visual, text, task_mode)
                     loss = criterion(out, label)
 
                 scaler.scale(loss).backward()
                 scaler.step(optimizer)
                 scaler.update()
             else: # Kalau CPU
-                out = model(visual, text).squeeze(-1)
+                out = _forward_batch(model, visual, text, task_mode)
                 loss = criterion(out, label)
                 loss.backward()
                 optimizer.step()
@@ -210,7 +259,7 @@ def train_model(
             train_loss += loss.item() # Akumulasi loss
 
         # Validation per epoch
-        val_logits, val_labels = infer_logits(model, val_loader, device)
+        val_logits, val_labels = infer_logits(model, val_loader, device, task_mode=task_mode)
         val_best = find_best_threshold(val_logits, val_labels)
         scheduler.step(val_best['f1'])
 
@@ -245,6 +294,7 @@ def train_model(
                 'epoch': epoch,
                 'best_val_f1': best_val_f1,
                 'best_threshold': best_threshold,
+                'task_mode': task_mode,
                 'config': {
                     'model_id': MODEL_ID,
                     'lr': LR,
@@ -261,6 +311,10 @@ def train_model(
 
     # Save history epoch ke csv
     history_df = pd.DataFrame(history)
-    history_df.to_csv(RUNS / f'train_history_{MODEL_ID.replace('/', '_')}.csv', index=False)
-
+    if runs_dir is not None:
+        history_df.to_csv(
+            Path(runs_dir) / f'train_history_{MODEL_ID.replace('/', '_')}.csv',
+            index=False
+        )
+        
     print(f'Best epoch: {best_epoch}, Best F1: {best_val_f1:.4f}, Best Threshold: {best_threshold:.2f}')

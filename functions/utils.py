@@ -75,11 +75,11 @@ def copy_images_to_local(img_dirs: dict, local_img_root: Path):
         to_copy = [p for p in src_files if not (dst_dir / p.name).exists()]
 
         if to_copy:
-          log.info(f'[{split.upper()}] Copying {len(to_copy)} image to local...')
-          for p in tqdm(to_copy, desc=f'Copy images {split}'):
-              shutil.copy2(p, dst_dir / p.name)
+            log.info(f'[{split.upper()}] Copying {len(to_copy)} image to local...')
+            for p in tqdm(to_copy, desc=f'Copy images {split}'):
+                shutil.copy2(p, dst_dir / p.name)
         else:
-          log.info(f'[{split.upper()}] No image to copy.')
+            log.info(f'[{split.upper()}] No image to copy.')
 
         out[split] = dst_dir
 

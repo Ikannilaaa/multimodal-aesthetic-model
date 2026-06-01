@@ -108,7 +108,9 @@ def run(prompt_type):
         val_loader,
         device=DEVICE,
         epochs=EPOCHS,
-        save_path=local_ckpt
+        save_path=local_ckpt,
+        runs_dir=paths.local_runs,
+        task_mode='text_only'
     )
     sync_to_drive(local_ckpt, drive_ckpt)
 
@@ -118,7 +120,8 @@ def run(prompt_type):
         test_loader,
         device=DEVICE,
         ckpt_path=local_ckpt,
-        out_dir=paths.cloud_runs
+        out_dir=paths.cloud_runs,
+        task_mode='text_only'
     )
 
     train_dataset.close()

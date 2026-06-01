@@ -40,7 +40,7 @@ class HybridFusionDataset(Dataset):
         elif 'label' in df.columns:
             label_col = 'label'
         else:
-            raise ValueError("CSV must contain 'label_like' column.")
+            raise ValueError("CSV must contain either 'label_like' or 'label' column.")
 
         # Ubah tipe data label_like menjadi numerik
         df[label_col] = pd.to_numeric(df[label_col], errors='coerce')
@@ -80,6 +80,9 @@ class HybridFusionDataset(Dataset):
 
         print(f'{target_split.upper()}: {len(self.data_list)} items. Skipped: {skipped}')
         print(f'Positive: {n_pos}, Negative: {n_neg}')
+
+        if not self.data_list:
+            raise RuntimeError(f'No valid samples found for split {target_split}. Check CSV and H5 keys.')
 
     def __len__(self):
         return len(self.data_list)
@@ -150,7 +153,7 @@ class VisualDataset(Dataset):
         elif 'label' in df.columns:
             label_col = 'label'
         else:
-            raise ValueError("CSV must contain 'label_like' column.")
+            raise ValueError("CSV must contain either 'label_like' or 'label' column.")
 
         # Ubah tipe data label_like menjadi numerik
         df[label_col] = pd.to_numeric(df[label_col], errors='coerce')
@@ -189,6 +192,9 @@ class VisualDataset(Dataset):
 
         print(f'{target_split.upper()}: {len(self.data_list)} items. Skipped: {skipped}')
         print(f'Positive: {n_pos}, Negative: {n_neg}')
+
+        if not self.data_list:
+            raise RuntimeError(f'No valid samples found for split {target_split}. Check CSV and H5 keys.')
 
     def __len__(self):
         return len(self.data_list)
@@ -248,7 +254,7 @@ class CaptionDataset(Dataset):
         elif 'label' in df.columns:
             label_col = 'label'
         else:
-            raise ValueError("CSV must contain 'label_like' column.")
+            raise ValueError("CSV must contain either 'label_like' or 'label' column.")
 
         # Ubah tipe data label_like menjadi numerik
         df[label_col] = pd.to_numeric(df[label_col], errors='coerce')
@@ -288,6 +294,9 @@ class CaptionDataset(Dataset):
         print(f'{target_split.upper()}: {len(self.data_list)} items. Skipped: {skipped}')
         print(f'Positive: {n_pos}, Negative: {n_neg}')
 
+        if not self.data_list:
+            raise RuntimeError(f'No valid samples found for split {target_split}. Check CSV and H5 keys.')
+
     def __len__(self):
         return len(self.data_list)
 
@@ -323,6 +332,9 @@ class CaptionDataset(Dataset):
 
 # Handling class imbalance
 def make_weighted_sampler(labels_list):
+    if len(labels_list) == 0:
+        raise ValueError("labels_list cannot be empty")
+
     labels_np = np.asarray(labels_list).astype(int)
     class_counts = np.bincount(labels_np, minlength=2)
     class_weights = 1.0 / np.maximum(class_counts, 1)

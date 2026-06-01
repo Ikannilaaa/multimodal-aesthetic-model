@@ -97,7 +97,9 @@ def run():
         val_loader,
         device=DEVICE,
         epochs=EPOCHS,
-        save_path=local_ckpt
+        save_path=local_ckpt,
+        runs_dir=paths.local_runs,
+        task_mode='visual_only'
     )
     sync_to_drive(local_ckpt, drive_ckpt)
 
@@ -107,7 +109,8 @@ def run():
         test_loader,
         device=DEVICE,
         ckpt_path=local_ckpt,
-        out_dir=paths.cloud_runs
+        out_dir=paths.cloud_runs,
+        task_mode='visual_only'
     )
 
     train_dataset.close()
