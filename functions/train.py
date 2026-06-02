@@ -61,7 +61,7 @@ def infer_logits(model, loader, device, task_mode='multimodal'):
                 visual = visual.to(device, non_blocking=True)
             if text is not None:
                 text = text.to(device, non_blocking=True)
-            label = label.to(device, non_blocking=True)
+            label = label.to(device, non_blocking=True).float().view(-1, 1)
 
             logits = _forward_batch(model, visual, text, task_mode)
             all_logits.append(logits.detach().cpu())
@@ -244,7 +244,7 @@ def train_model(
 
             if device == 'cuda':
                 with torch.cuda.amp.autocast(dtype=torch.float16):
-                    out = _forward_batch(model, visual, text, task_mode)
+                    out = _forward_batch(model, visual, text, task_mode).view(-1, 1)
                     loss = criterion(out, label)
 
                 scaler.scale(loss).backward()
