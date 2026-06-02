@@ -1,3 +1,5 @@
+# train.py
+
 from pathlib import Path
 import numpy as np
 import pandas as pd
@@ -5,6 +7,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from tqdm.auto import tqdm
+from IPython.display import display, Image
 import matplotlib.pyplot as plt
 import seaborn as sns
 
@@ -148,24 +151,25 @@ def evaluate_model(
 
     # Confusion Matrix
     cm = confusion_matrix(labels, preds)
-    plt.figure(figsize=(8, 6))
+    fig, ax = plt.subplots(figsize=(8, 6))
     sns.heatmap(cm, annot=True, fmt='d', cmap='Blues',
                 xticklabels=['Low Aesthetic', 'High Aesthetic'],
                 yticklabels=['Low Aesthetic', 'High Aesthetic'])
-    plt.title('Confusion Matrix')
-    plt.xlabel('Predicted')
-    plt.ylabel('True')
+    ax.set_title('Confusion Matrix')
+    ax.set_xlabel('Predicted')
+    ax.set_ylabel('True')
 
     for i in range(cm.shape[0]):
         for j in range(cm.shape[1]):
-            plt.text(j, i, int(cm[i, j]), ha='center', va='center', color='white')
-    plt.tight_layout()
+            ax.text(j, i, int(cm[i, j]), ha='center', va='center', color='white')
+    fig.tight_layout()
 
     if out_dir is not None:
         out_dir = Path(out_dir)
         out_dir.mkdir(parents=True, exist_ok=True)
         # Save confusion matrix
         plt.savefig(out_dir / 'confusion_matrix.png', dpi=180, bbox_inches='tight')
+        display(Image(filename=str(out_dir / 'confusion_matrix.png')))
 
         # Simpan prediksi per sampel
         pd.DataFrame({
@@ -182,7 +186,7 @@ def evaluate_model(
             'roc_auc': [float(auc)] if auc is not None else [None]
         }).to_csv(out_dir / 'test_metrics.csv', index=False)
 
-    plt.show()
+    plt.close(fig)
 
 # Handler Training
 def train_model(

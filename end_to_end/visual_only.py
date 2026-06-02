@@ -1,3 +1,5 @@
+# visual_only.py
+
 from functions.config import *
 from functions.utils import *
 from functions.data import VisualDataset, make_weighted_sampler
@@ -98,7 +100,7 @@ def run():
         device=DEVICE,
         epochs=EPOCHS,
         save_path=local_ckpt,
-        runs_dir=paths.local_runs,
+        runs_dir=paths.cloud_runs,
         task_mode='visual_only'
     )
     sync_to_drive(local_ckpt, drive_ckpt)

@@ -1,3 +1,5 @@
+# extractor.py
+
 from pathlib import Path
 from functions.config import (
     MODEL_ID,

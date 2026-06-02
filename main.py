@@ -1,3 +1,5 @@
+# main.py
+
 import argparse
 from end_to_end.multimodal import run as run_multimodal
 from end_to_end.text_only import run as run_text_only

@@ -1,3 +1,5 @@
+# text_only.py
+
 from functions.config import *
 from functions.utils import *
 from functions.data import CaptionDataset, make_weighted_sampler
