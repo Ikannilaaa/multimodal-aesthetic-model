@@ -4,7 +4,7 @@ import pandas as pd
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from tqdm import tqdm
+from tqdm.auto import tqdm
 import matplotlib.pyplot as plt
 import seaborn as sns
 
@@ -70,8 +70,8 @@ def infer_logits(model, loader, device, task_mode='multimodal'):
     if not all_logits:
         raise RuntimeError('No batches found in loader.')
 
-    logits = torch.cat(all_logits, dim=0).squeeze().numpy()
-    labels = torch.cat(all_labels, dim=0).numpy()
+    logits = torch.cat(all_logits, dim=0).view(-1).numpy()
+    labels = torch.cat(all_labels, dim=0).view(-1).numpy()
 
     return logits, labels
 
@@ -245,15 +245,13 @@ def train_model(
             if device == 'cuda':
                 with torch.cuda.amp.autocast(dtype=torch.float16):
                     out = _forward_batch(model, visual, text, task_mode).view(-1, 1)
-                    print(f'OUT SHAPE = {out.shape}')
-                    print(f'LABEL SHAPE = {label.shape}')
                     loss = criterion(out, label)
 
                 scaler.scale(loss).backward()
                 scaler.step(optimizer)
                 scaler.update()
             else: # Kalau CPU
-                out = _forward_batch(model, visual, text, task_mode)
+                out = _forward_batch(model, visual, text, task_mode).view(-1, 1)
                 loss = criterion(out, label)
                 loss.backward()
                 optimizer.step()
