@@ -61,16 +61,16 @@ def infer_logits(model, loader, device, task_mode='multimodal'):
                 visual = visual.to(device, non_blocking=True)
             if text is not None:
                 text = text.to(device, non_blocking=True)
-            label = label.to(device, non_blocking=True).view(-1, 1)
+            label = label.to(device, non_blocking=True)
 
             logits = _forward_batch(model, visual, text, task_mode)
-            all_logits.append(logits.detach().cpu().view(-1))
-            all_labels.append(label.detach().cpu().view(-1))
+            all_logits.append(logits.detach().cpu())
+            all_labels.append(label.detach().cpu())
 
     if not all_logits:
         raise RuntimeError('No batches found in loader.')
 
-    logits = torch.cat(all_logits, dim=0).numpy()
+    logits = torch.cat(all_logits, dim=0).squeeze().numpy()
     labels = torch.cat(all_labels, dim=0).numpy()
 
     return logits, labels
