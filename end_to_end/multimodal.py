@@ -133,7 +133,7 @@ def run(prompt_type):
         device=DEVICE,
         epochs=EPOCHS,
         save_path=local_ckpt,
-        runs_dir=paths.local_runs,
+        runs_dir=paths.cloud_runs,
         task_mode='multimodal'
     )
     sync_to_drive(local_ckpt, drive_ckpt)
