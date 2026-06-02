@@ -238,13 +238,15 @@ def train_model(
                 visual = visual.to(device, non_blocking=True)
             if text is not None:
                 text = text.to(device, non_blocking=True)
-            label = label.to(device, non_blocking=True)
+            label = label.to(device, non_blocking=True).float().view(-1, 1)
 
             optimizer.zero_grad(set_to_none=True) # Hapus gradient lama sebelum backward baru
 
             if device == 'cuda':
                 with torch.cuda.amp.autocast(dtype=torch.float16):
                     out = _forward_batch(model, visual, text, task_mode).view(-1, 1)
+                    print(f'OUT SHAPE = {out.shape}')
+                    print(f'LABEL SHAPE = {label.shape}')
                     loss = criterion(out, label)
 
                 scaler.scale(loss).backward()
