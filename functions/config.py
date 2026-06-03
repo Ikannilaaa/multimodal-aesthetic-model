@@ -1,4 +1,6 @@
 # config.py
+import warnings
+warnings.filterwarnings('ignore', category=FutureWarning)
 
 from dataclasses import dataclass
 from pathlib import Path

@@ -1,12 +1,13 @@
 # train.py
-
+import warnings
+warnings.filterwarnings('ignore', category=FutureWarning)
 from pathlib import Path
 import numpy as np
 import pandas as pd
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from tqdm.auto import tqdm
+from tqdm.notebook import tqdm
 from IPython.display import display, Image
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -152,16 +153,18 @@ def evaluate_model(
     # Confusion Matrix
     cm = confusion_matrix(labels, preds)
     fig, ax = plt.subplots(figsize=(8, 6))
-    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues',
-                xticklabels=['Low Aesthetic', 'High Aesthetic'],
-                yticklabels=['Low Aesthetic', 'High Aesthetic'])
+    sns.heatmap(
+        cm, 
+        annot=True, 
+        fmt='d', 
+        cmap='Blues',
+        xticklabels=['Low Aesthetic', 'High Aesthetic'],
+        yticklabels=['Low Aesthetic', 'High Aesthetic'],
+        ax=ax
+    )
     ax.set_title('Confusion Matrix')
     ax.set_xlabel('Predicted')
     ax.set_ylabel('True')
-
-    for i in range(cm.shape[0]):
-        for j in range(cm.shape[1]):
-            ax.text(j, i, int(cm[i, j]), ha='center', va='center', color='white')
     fig.tight_layout()
 
     if out_dir is not None:
@@ -234,7 +237,13 @@ def train_model(
         model.train() # Training mode
         train_loss = 0.0
 
-        for batch in tqdm(train_loader, desc=f'Epoch {epoch}/{epochs}'):
+        for batch in tqdm(
+            train_loader,
+            desc=f'Epoch {epoch}/{epochs}',
+            leave=True,
+            dynamic_ncols=True,
+            mininterval=0.5
+        ):
             # Pindah ke device
             visual, text, label = _unpack_batch(batch, task_mode)
 
