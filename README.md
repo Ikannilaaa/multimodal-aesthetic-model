@@ -3,9 +3,26 @@
 This model is built by integrating the usage of LLaVA model for captioning and CLIP model for features extraction. Classification is done by Multilayer Perceptron and human-annotated aesthetic label were used for the ground truth.
 
 To run the training process, run this line on your command.
+
 ```
 python main.py --scenario multimodal --prompt_type structured
 ```
+
+Or if you want cleaner and figures to show up when you use colab, run this line on your command.
+
+```
+import sys
+
+sys.argv = [
+    "main.py",
+    "--scenario", "multimodal",
+    "--prompt-type", "structured",
+]
+
+import main
+main.main()
+```
+
 The existing scenarios including 'multimodal', 'visual_only' and 'text_only'. For the prompt, existing options are 'contrastive' and 'structured'. The possible combination of the scenarios are shown in this table below.
 
 | Scenario  | Prompt Type |
@@ -16,4 +33,4 @@ The existing scenarios including 'multimodal', 'visual_only' and 'text_only'. Fo
 | Multimodal  | Contrastive  |
 | Multimodal  | Structured  |
 
-For this experiment, A100 GPU in Google Colab is used. The dataset used for this originally taken from Gourmet Photography Dataset (GPD).
+For this experiment, A100 GPU in Google Colab is used. The dataset used for this originally taken from [Gourmet Photography Dataset (GPD)](https://github.com/Openning07/GPA).
