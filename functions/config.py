@@ -129,7 +129,7 @@ def build_paths(
     if scenario in {'text_only', 'multimodal'}:
         paths.local_captions = local_root / 'captions'
     if scenario in {'visual_only', 'multimodal'}:
-        paths.local_images = local_root / 'images'
+        paths.local_images = BASE_LOCAL / 'images'
 
     # mkdir
     for p in [
