@@ -13,12 +13,12 @@ SCENARIO = 'multimodal'
 RUN_ID = time.strftime('%Y%m%d-%H%M%S')
 
 # Path Configuration
-BASE_CLOUD = Path('/content/drive/MyDrive/TA_DIR/baseline')
+BASE_CLOUD = Path('/content/drive/MyDrive/TA_DIR')
 BASE_LOCAL = Path('/content/work_24k')
 
 # Folder di google drive
 DATA_DIR = BASE_CLOUD / 'data'
-CSV_PATH = DATA_DIR / 'sample_subset.csv'
+CSV_PATH = DATA_DIR / 'metadata_split.csv'
 CAPTION_DIR = BASE_CLOUD / 'captions' / 'clean'
     
 # Model, Seed
@@ -34,7 +34,7 @@ TEST_BATCH_SIZE = 256
 VISUAL_BATCH_SIZE = 64
 NUM_WORKERS = 0 
 EPOCHS = 30 
-PATIENCE = 6 
+PATIENCE = 5 
 LR = 1e-4 
 WEIGHT_DECAY = 1e-4
 PIN_MEMORY = True
@@ -42,7 +42,7 @@ VISUAL_SYNC_EVERY = 5000
 
 VALID_EXT = {".jpg", ".jpeg", ".png", ".bmp", ".webp"}
 SPLITS = ["train", "val", "test"]
-THRESHOLDS = np.arange(0.30, 0.71, 0.02)
+THRESHOLDS = np.arange(0.1, 0.91, 0.01)
 
 IMG_DIRS = {
     'train': BASE_CLOUD / 'split_images' / 'train',
