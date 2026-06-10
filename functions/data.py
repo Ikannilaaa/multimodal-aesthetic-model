@@ -65,6 +65,14 @@ class HybridFusionDataset(Dataset):
                     break
 
             if key_to_use is None:
+                print(f"\nSKIPPED: {img_id}")
+
+                vis_found = any(k in vis_keys for k in _build_candidates(img_id))
+                txt_found = any(k in txt_keys for k in _build_candidates(img_id))
+
+                print(f"  Visual feature found: {vis_found}")
+                print(f"  Text feature found: {txt_found}")
+                
                 skipped += 1
                 continue
 
@@ -177,6 +185,7 @@ class VisualDataset(Dataset):
                     break
 
             if key_to_use is None:
+                print(f"SKIPPED: {img_id}")
                 skipped += 1
                 continue
 
@@ -278,6 +287,7 @@ class CaptionDataset(Dataset):
                     break
 
             if key_to_use is None:
+                print(f"SKIPPED: {img_id}")
                 skipped += 1
                 continue
 
