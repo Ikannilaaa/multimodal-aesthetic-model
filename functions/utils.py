@@ -62,14 +62,26 @@ def check_disk_space(path: Path, required_gb: float = 15.0):
 
 # Copy file images dari cloud ke lokal
 def copy_images_to_local(img_dirs: dict, local_img_root: Path):
-    if (
-        (local_img_root / 'train').exists() and
-        (local_img_root / 'val').exists() and
-        (local_img_root / 'test').exists()
-    ):
-        log.info('Local image directories already exist. Skipping copy.')
-        return {split: local_img_root / split for split in ['train', 'val', 'test']}
-    
+    is_complete = True
+    for split, src_dir in img_dirs.items():
+        src_count = len([p for p in Path(src_dir).iterdir() if p.is_file()])
+
+        dst_dir = local_img_root / split
+
+        if not dst_dir.exists():
+            is_complete = False
+            break
+
+        dst_count = len([p for p in dst_dir.iterdir() if p.is_file()])
+
+        if dst_count < src_count:
+            is_complete = False
+            break
+
+    if is_complete:
+        log.info('All images already copied to local.')
+        return {split: local_img_root / split for split in img_dirs.keys()}
+        
     check_disk_space(local_img_root.parent, required_gb=15.0)
     out = {}
 
