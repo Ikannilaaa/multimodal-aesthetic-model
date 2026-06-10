@@ -42,7 +42,7 @@ VISUAL_SYNC_EVERY = 5000
 
 VALID_EXT = {".jpg", ".jpeg", ".png", ".bmp", ".webp"}
 SPLITS = ["train", "val", "test"]
-THRESHOLDS = np.arange(0.1, 0.91, 0.01)
+THRESHOLDS = np.arange(0.30, 0.71, 0.02)
 
 IMG_DIRS = {
     'train': BASE_CLOUD / 'split_images' / 'train',
