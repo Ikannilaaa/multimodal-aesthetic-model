@@ -72,7 +72,8 @@ def copy_images_to_local(img_dirs: dict, local_img_root: Path):
         dst_dir.mkdir(parents=True, exist_ok=True)
 
         src_files = [p for p in sorted(src_dir.iterdir()) if p.is_file()]
-        to_copy = [p for p in src_files if not (dst_dir / p.name).exists()]
+        existing = {p.name for p in dst_dir.iterdir() if p.is_file()}
+        to_copy = [p for p in src_files if p.name not in existing]
 
         if to_copy:
             log.info(f'[{split.upper()}] Copying {len(to_copy)} image to local...')
